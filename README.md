@@ -1,1 +1,1 @@
-# oj-python
+# oj-py
