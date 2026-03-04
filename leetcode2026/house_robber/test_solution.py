@@ -1,5 +1,6 @@
 from unittest import TestCase
-from solution import Solution
+
+from leetcode2026.house_robber.solution import Solution
 
 
 class TestSolution(TestCase):
