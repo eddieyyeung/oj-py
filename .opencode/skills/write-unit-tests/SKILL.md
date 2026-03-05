@@ -34,36 +34,24 @@ from <package.path.to>.solution import Solution
 
 - 类名固定为 `TestSolution(TestCase)`
 - 在 `setUp(self)` 中初始化 `self.solution = Solution()`
-- 每个被测方法对应一个测试方法，命名为 `test_<method_name>`
+- 每个测试场景拆分为独立的 `test_*` 方法，命名清晰描述场景（如 `test_empty`、`test_single_node`）
 
 ### 测试用例格式
 
-使用**表驱动测试（table-driven）**：将所有用例放入一个列表，用循环 + `assertEqual` 断言，不使用 `print`。
+每个测试场景对应一个独立的 `test_*` 方法，直接在方法体内断言，不使用 `test_cases` 列表循环。
 
 ```python
-def test_rob(self):
-    test_cases = [
-        ([1, 2, 3, 1], 4),
-        ([2, 7, 9, 3, 1], 12),
-        ...
-    ]
-    for nums, expected in test_cases:
-        self.assertEqual(self.solution.rob(nums), expected)
+def test_two_non_adjacent(self):
+    self.assertEqual(self.solution.rob([1, 2, 3, 1]), 4)
+
+def test_single_element(self):
+    self.assertEqual(self.solution.rob([5]), 5)
+
+def test_empty(self):
+    self.assertEqual(self.solution.rob([]), 0)
 ```
 
-当方法有多个参数时，用元组打包输入：
-
-```python
-def test_example(self):
-    test_cases = [
-        (("23",), ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]),
-        (("",), []),
-    ]
-    for (digits,), expected in test_cases:
-        self.assertCountEqual(self.solution.letterCombinations(digits), expected)
-```
-
-> 当返回值是无序集合（如全排列、组合）时，使用 `assertCountEqual` 代替 `assertEqual`。
+> 当返回值是无序集合（如全排列、组合、树路径）时，使用 `assertCountEqual` 代替 `assertEqual`。
 
 ### 必须覆盖的场景
 
@@ -111,19 +99,29 @@ class TestSolution(TestCase):
     def setUp(self):
         self.solution = Solution()
 
-    def test_rob(self):
-        test_cases = [
-            ([1, 2, 3, 1], 4),
-            ([2, 7, 9, 3, 1], 12),
-            ([5], 5),
-            ([2, 1], 2),
-            ([3, 3, 3, 3], 6),
-            ([1, 2, 3, 4, 5], 9),
-            ([0, 0, 0], 0),
-            ([], 0),
-        ]
-        for nums, expected in test_cases:
-            self.assertEqual(self.solution.rob(nums), expected)
+    def test_two_non_adjacent(self):
+        self.assertEqual(self.solution.rob([1, 2, 3, 1]), 4)
+
+    def test_longer_sequence(self):
+        self.assertEqual(self.solution.rob([2, 7, 9, 3, 1]), 12)
+
+    def test_single_element(self):
+        self.assertEqual(self.solution.rob([5]), 5)
+
+    def test_two_elements(self):
+        self.assertEqual(self.solution.rob([2, 1]), 2)
+
+    def test_all_same(self):
+        self.assertEqual(self.solution.rob([3, 3, 3, 3]), 6)
+
+    def test_increasing(self):
+        self.assertEqual(self.solution.rob([1, 2, 3, 4, 5]), 9)
+
+    def test_all_zeros(self):
+        self.assertEqual(self.solution.rob([0, 0, 0]), 0)
+
+    def test_empty(self):
+        self.assertEqual(self.solution.rob([]), 0)
 ```
 
 ## 注意事项
@@ -131,4 +129,5 @@ class TestSolution(TestCase):
 - 不要创建或修改 `__init__.py`
 - 不要运行测试命令；生成文件后直接报告完成
 - 如果 `solution.py` 包含多个方法（如构造函数类题目），为每个公开方法单独写一个 `test_*` 方法
+- 每个测试场景拆分为独立的 `test_*` 方法，而非全部写在同一个方法的 `test_cases` 列表中；这样失败信息更精确，可读性更好
 - 保持 PEP 8 格式：4 空格缩进，顶层类/函数之间空两行
