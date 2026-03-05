@@ -9,8 +9,8 @@ Welcome, AI coding agent. This repository contains solutions for competitive pro
 
 ```
 oj-py/
-├── leetcode2026/          # LeetCode problems (new style, directory-local imports)
-│   └── house-robber/
+├── leetcode2026/          # LeetCode problems (preferred new style)
+│   └── house_robber/
 │       ├── solution.py
 │       └── test_solution.py
 ├── leetcode/              # LeetCode problems (old style, root-relative imports)
@@ -27,26 +27,30 @@ oj-py/
         └── output.txt
 ```
 
-- **`leetcode2026/`**: Each problem directory contains `solution.py` and `test_solution.py`. Imports are local (e.g., `from solution import Solution`). Tests are run from within the problem directory.
-- **`leetcode/`**: Each problem directory must have an `__init__.py`. Imports use the full package path (e.g., `from leetcode.P3000.solution import Solution`). Tests are run from the project root.
+- **`leetcode2026/`**: Each problem directory contains `solution.py` and `test_solution.py`. Imports use the full package path from the project root (e.g., `from leetcode2026.house_robber.solution import Solution`). Tests are run from the **project root**.
+- **`leetcode/`**: Each problem directory must have an `__init__.py`. Same full package path imports. Tests are run from the project root.
 - **`codeforces/`**: Problems use a file-based I/O pattern, not `unittest`. See Section 5 for details.
+- **Multiple solutions for one problem**: Create subdirectories named by algorithm (e.g., `subsets/backtrack_choose_element/`, `subsets/backtrack_include_exclude/`), each with its own `solution.py` and `test_solution.py`.
 
 ---
 
 ## 2. Build, Lint, and Test Commands
 
-### Testing — `leetcode2026/` (preferred new style)
-
-Run from **within** the problem directory:
-
-```bash
-cd leetcode2026/house-robber
-python -m unittest test_solution -v
-```
-
-### Testing — `leetcode/` (old style, root-relative)
+### Testing — single problem (`leetcode2026/`)
 
 Run from the **project root**:
+
+```bash
+python -m unittest leetcode2026.house_robber.test_solution -v
+```
+
+### Testing — single test method
+
+```bash
+python -m unittest leetcode2026.house_robber.test_solution.TestSolution.test_single_element -v
+```
+
+### Testing — `leetcode/` (old style)
 
 ```bash
 python -m unittest leetcode.P3000.test_solution -v
@@ -116,6 +120,7 @@ uv sync            # install/sync dependencies (preferred)
 - **Functions/Methods**: `snake_case` (e.g., `rob`, `test_rob`, `binary_search`). LeetCode method names may be `camelCase`; maintain the signature exactly as given by the platform.
 - **Variables**: Concise, descriptive `snake_case` (e.g., `max_profit`, `nums`, `left`, `right`, `expected`).
 - **Constants**: `UPPER_SNAKE_CASE` (e.g., `MOD = 10**9 + 7`, `MAPPING = [...]`).
+- **Problem directories**: `snake_case` matching the problem slug (e.g., `house_robber`, `binary_tree_paths`).
 
 ### 3.5 Error Handling & Edge Cases
 
@@ -128,14 +133,20 @@ uv sync            # install/sync dependencies (preferred)
 **Nested Helpers**: Define helper functions (`dfs`, `backtrack`, etc.) *inside* the main method to capture outer variables and avoid polluting the class namespace.
 
 ```python
-def findPaths(self, root: Optional[TreeNode]) -> List[str]:
-    res = []
-    def dfs(node: Optional[TreeNode], path: List[str]) -> None:
-        if not node:
+def binaryTreePaths(self, root: Optional[TreeNode]) -> List[str]:
+    ans = []
+    path = []
+    def dfs(node: Optional[TreeNode]) -> None:
+        if node is None:
             return
-        # ... logic ...
-    dfs(root, [])
-    return res
+        path.append(str(node.val))
+        if not node.left and not node.right:
+            ans.append("->".join(path))
+        dfs(node.left)
+        dfs(node.right)
+        path.pop()
+    dfs(root)
+    return ans
 ```
 
 **Memoization**: Always prefer `from functools import cache` (or `lru_cache(None)`) on inner recursive helpers instead of manual dict caches.
@@ -158,29 +169,35 @@ def rob(self, nums: List[int]) -> int:
 
 When generating or updating `test_solution.py`:
 
-1. Use a **table-driven testing** approach: iterate over a list of `(input, expected)` tuples in a single test method.
+1. **Split every scenario into its own `test_*` method** — do NOT use a `test_cases` list with a loop. This makes failure messages precise and readable.
 2. Initialize the `Solution` object in `setUp(self)` to keep tests DRY.
-3. Use `assertEqual` (not just `print`) so failures are caught automatically.
-4. Test a robust set of scenarios: provided examples, boundaries (empty input, single element, all identical, all zeros), and worst-case inputs.
+3. Use `assertEqual` (not `print`) so failures are caught automatically.
+4. Use `assertCountEqual` when the return value is an unordered collection (e.g., subsets, permutations, tree paths).
+5. Cover: provided examples, empty input, single element, all-identical elements, boundary values, and problem-specific edge cases.
 
 ```python
 from unittest import TestCase
-from solution import Solution
+from leetcode2026.house_robber.solution import Solution
+
 
 class TestSolution(TestCase):
     def setUp(self):
         self.solution = Solution()
 
-    def test_rob(self):
-        test_cases = [
-            ([1, 2, 3, 1], 4),
-            ([2, 7, 9, 3, 1], 12),
-            ([5], 5),
-            ([0, 0, 0], 0),
-            ([], 0),
-        ]
-        for nums, expected in test_cases:
-            self.assertEqual(self.solution.rob(nums), expected)
+    def test_two_non_adjacent(self):
+        self.assertEqual(self.solution.rob([1, 2, 3, 1]), 4)
+
+    def test_longer_sequence(self):
+        self.assertEqual(self.solution.rob([2, 7, 9, 3, 1]), 12)
+
+    def test_single_element(self):
+        self.assertEqual(self.solution.rob([5]), 5)
+
+    def test_all_zeros(self):
+        self.assertEqual(self.solution.rob([0, 0, 0]), 0)
+
+    def test_empty(self):
+        self.assertEqual(self.solution.rob([]), 0)
 ```
 
 ---
@@ -230,6 +247,6 @@ When you receive an instruction to implement a solution:
 
 1. **Acknowledge and Plan**: Analyze the problem and state the algorithm (e.g., "I will use top-down DP with memoization").
 2. **Implement**: Create or edit `solution.py` matching the style guidelines above.
-3. **Write Tests**: Create or edit `test_solution.py` with comprehensive, assertion-based coverage (LeetCode) or prepare `input.txt` (Codeforces).
+3. **Write Tests**: Create or edit `test_solution.py` with per-scenario `test_*` methods (LeetCode) or prepare `input.txt` (Codeforces).
 4. **Self-Verify**: Always run the unit test command using the Bash tool. Debug any failures autonomously. Do not report completion until tests pass.
 5. **Finalize**: Only announce completion when tests pass. Do not volunteer verbose explanations unless requested.
